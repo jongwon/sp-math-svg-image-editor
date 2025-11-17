@@ -32,12 +32,19 @@ export default function MathSVGEditor() {
     draggedPointIndex: null,
   });
   const [tempPoints, setTempPoints] = useState<Point[]>([]);
+  const [canvasWidth, setCanvasWidth] = useState(1200);
+  const [canvasHeight, setCanvasHeight] = useState(800);
+  const [isResizing, setIsResizing] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
-  const canvasWidth = 1200;
-  const canvasHeight = 800;
+  const containerRef = useRef<HTMLDivElement>(null);
   const centerX = canvasWidth / 2 + state.pan.x;
   const centerY = canvasHeight / 2 + state.pan.y;
   const scale = 40 * state.zoom;
+
+  const MIN_WIDTH = 400;
+  const MIN_HEIGHT = 300;
+  const MAX_WIDTH = 2400;
+  const MAX_HEIGHT = 1600;
 
   // SVG 좌표 변환
   const getSVGPoint = useCallback((e: React.MouseEvent): Point => {
@@ -299,6 +306,51 @@ export default function MathSVGEditor() {
     });
   }, [state]);
 
+  // 캔버스 리사이즈 시작
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+  }, []);
+
+  // 캔버스 리사이즈
+  const handleResize = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing || !containerRef.current) return;
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newWidth = Math.max(
+        MIN_WIDTH,
+        Math.min(MAX_WIDTH, e.clientX - containerRect.left)
+      );
+      const newHeight = Math.max(
+        MIN_HEIGHT,
+        Math.min(MAX_HEIGHT, e.clientY - containerRect.top)
+      );
+
+      setCanvasWidth(newWidth);
+      setCanvasHeight(newHeight);
+    },
+    [isResizing, MIN_WIDTH, MIN_HEIGHT, MAX_WIDTH, MAX_HEIGHT]
+  );
+
+  // 캔버스 리사이즈 종료
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  // 리사이즈 이벤트 리스너
+  React.useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResize);
+      document.addEventListener('mouseup', handleResizeEnd);
+      return () => {
+        document.removeEventListener('mousemove', handleResize);
+        document.removeEventListener('mouseup', handleResizeEnd);
+      };
+    }
+  }, [isResizing, handleResize, handleResizeEnd]);
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* 툴바 */}
@@ -314,12 +366,16 @@ export default function MathSVGEditor() {
 
       {/* 메인 캔버스 */}
       <div className="flex-1 flex flex-col items-center justify-center p-4">
-        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div
+          ref={containerRef}
+          className="relative bg-white shadow-lg rounded-lg overflow-hidden"
+          style={{ width: 'fit-content', height: 'fit-content' }}
+        >
           <svg
             ref={svgRef}
             width={canvasWidth}
             height={canvasHeight}
-            className="border border-gray-300"
+            className="border border-gray-300 block"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -378,11 +434,23 @@ export default function MathSVGEditor() {
               </g>
             )}
           </svg>
+
+          {/* 리사이즈 핸들 */}
+          <div
+            className="absolute bottom-0 right-0 w-6 h-6 bg-blue-500 cursor-nwse-resize hover:bg-blue-600 transition-colors"
+            style={{
+              clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
+            }}
+            onMouseDown={handleResizeStart}
+            title="드래그하여 캔버스 크기 조절"
+          >
+            <div className="absolute bottom-1 right-1 text-white text-xs">⇲</div>
+          </div>
         </div>
 
         {/* 상태 정보 */}
         <div className="mt-4 text-sm text-gray-600">
-          도구: {state.selectedTool} | 도형: {state.shapes.length} | 함수: {state.functions.length}
+          도구: {state.selectedTool} | 도형: {state.shapes.length} | 함수: {state.functions.length} | 캔버스: {canvasWidth}x{canvasHeight}px
         </div>
       </div>
 
