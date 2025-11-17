@@ -35,8 +35,13 @@ export default function MathSVGEditor() {
   const [canvasWidth, setCanvasWidth] = useState(1200);
   const [canvasHeight, setCanvasHeight] = useState(800);
   const [isResizing, setIsResizing] = useState(false);
+  const [isEditingText, setIsEditingText] = useState(false);
+  const [textInput, setTextInput] = useState('');
+  const [textPosition, setTextPosition] = useState<Point>({ x: 0, y: 0 });
+  const [textFontSize, setTextFontSize] = useState(16);
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const textInputRef = useRef<HTMLInputElement>(null);
   const centerX = canvasWidth / 2 + state.pan.x;
   const centerY = canvasHeight / 2 + state.pan.y;
   const scale = 40 * state.zoom;
@@ -75,19 +80,14 @@ export default function MathSVGEditor() {
       } else if (state.selectedTool === 'polygon') {
         setTempPoints([...tempPoints, point]);
       } else if (state.selectedTool === 'text') {
-        const newShape: Shape = {
-          id: `text-${Date.now()}`,
-          type: 'text',
-          points: [point],
-          color: '#000000',
-          strokeWidth: 1,
-          text: 'Text',
-          fontSize: 16,
-        };
-        setState({
-          ...state,
-          shapes: [...state.shapes, newShape],
-        });
+        // 텍스트 입력 모드 시작
+        setTextPosition(point);
+        setTextInput('');
+        setIsEditingText(true);
+        // 다음 프레임에서 input에 포커스
+        setTimeout(() => {
+          textInputRef.current?.focus();
+        }, 0);
       }
     },
     [state, tempPoints, getSVGPoint]
@@ -115,6 +115,25 @@ export default function MathSVGEditor() {
                 const newPoints = [...shape.points];
                 newPoints[dragState.draggedPointIndex!] = point;
                 return { ...shape, points: newPoints };
+              }
+              return shape;
+            }),
+          });
+        } else if (state.selectedTool === 'select' && state.selectedShapeId) {
+          // 도형 전체 드래그
+          const dx = point.x - dragState.currentPoint.x;
+          const dy = point.y - dragState.currentPoint.y;
+          setState({
+            ...state,
+            shapes: state.shapes.map((shape) => {
+              if (shape.id === state.selectedShapeId) {
+                return {
+                  ...shape,
+                  points: shape.points.map((p) => ({
+                    x: p.x + dx,
+                    y: p.y + dy,
+                  })),
+                };
               }
               return shape;
             }),
@@ -306,6 +325,33 @@ export default function MathSVGEditor() {
     });
   }, [state]);
 
+  // 텍스트 입력 완료
+  const handleTextInputComplete = useCallback(() => {
+    if (textInput.trim()) {
+      const newShape: Shape = {
+        id: `text-${Date.now()}`,
+        type: 'text',
+        points: [textPosition],
+        color: '#000000',
+        strokeWidth: 1,
+        text: textInput,
+        fontSize: textFontSize,
+      };
+      setState({
+        ...state,
+        shapes: [...state.shapes, newShape],
+      });
+    }
+    setIsEditingText(false);
+    setTextInput('');
+  }, [state, textInput, textPosition, textFontSize]);
+
+  // 텍스트 입력 취소
+  const handleTextInputCancel = useCallback(() => {
+    setIsEditingText(false);
+    setTextInput('');
+  }, []);
+
   // 캔버스 리사이즈 시작
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -434,6 +480,59 @@ export default function MathSVGEditor() {
               </g>
             )}
           </svg>
+
+          {/* 텍스트 입력 박스 */}
+          {isEditingText && (
+            <div
+              className="absolute border-2 border-dashed border-blue-500 bg-white bg-opacity-90 p-2 rounded"
+              style={{
+                left: `${textPosition.x}px`,
+                top: `${textPosition.y - 40}px`,
+                minWidth: '200px',
+              }}
+            >
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={textInputRef}
+                  type="text"
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleTextInputComplete();
+                    } else if (e.key === 'Escape') {
+                      handleTextInputCancel();
+                    }
+                  }}
+                  placeholder="텍스트 입력..."
+                  className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div className="flex gap-1">
+                  <input
+                    type="number"
+                    value={textFontSize}
+                    onChange={(e) => setTextFontSize(parseInt(e.target.value) || 16)}
+                    min="8"
+                    max="72"
+                    className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
+                    title="폰트 크기"
+                  />
+                  <button
+                    onClick={handleTextInputComplete}
+                    className="flex-1 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                  >
+                    완료
+                  </button>
+                  <button
+                    onClick={handleTextInputCancel}
+                    className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 리사이즈 핸들 */}
           <div
