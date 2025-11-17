@@ -690,17 +690,19 @@ export default function MathSVGEditor() {
             />
 
             {/* 도형 */}
-            <ShapeRenderer
-              shapes={state.shapes}
-              selectedShapeId={state.selectedShapeId}
-              onShapeClick={handleShapeClick}
-              onPointDragStart={handlePointDragStart}
-              onShapeDragStart={handleShapeDragStart}
-            />
+            <g transform={`translate(${centerX}, ${centerY}) scale(${state.zoom}) translate(${-centerX}, ${-centerY})`}>
+              <ShapeRenderer
+                shapes={state.shapes}
+                selectedShapeId={state.selectedShapeId}
+                onShapeClick={handleShapeClick}
+                onPointDragStart={handlePointDragStart}
+                onShapeDragStart={handleShapeDragStart}
+              />
+            </g>
 
             {/* 임시 도형 (그리는 중) */}
             {tempPoints.length > 0 && (
-              <g>
+              <g transform={`translate(${centerX}, ${centerY}) scale(${state.zoom}) translate(${-centerX}, ${-centerY})`}>
                 {/* 임시 점들 표시 */}
                 {tempPoints.map((p, i) => (
                   <circle key={i} cx={p.x} cy={p.y} r={3} fill="red" />
