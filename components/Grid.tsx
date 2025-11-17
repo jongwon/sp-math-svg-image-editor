@@ -119,7 +119,7 @@ export default function Grid({
               y={centerY + labelOffset}
               textAnchor="middle"
               fontSize="12"
-              fill="#666"
+              fill="#333"
             >
               {Math.round((x - centerX) / scale)}
             </text>
@@ -146,7 +146,7 @@ export default function Grid({
               y={y + 4}
               textAnchor="middle"
               fontSize="12"
-              fill="#666"
+              fill="#333"
             >
               {Math.round((centerY - y) / scale)}
             </text>
@@ -162,7 +162,7 @@ export default function Grid({
         x={centerX + 10}
         y={centerY + 20}
         fontSize="14"
-        fill="#666"
+        fill="#333"
       >
         O
       </text>

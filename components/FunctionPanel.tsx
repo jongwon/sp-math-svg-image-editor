@@ -73,7 +73,7 @@ export default function FunctionPanel({
               </option>
             ))}
           </select>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-700 mt-1">
             {functionTypes.find((t) => t.value === functionType)?.example}
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function FunctionPanel({
       <div>
         <h3 className="font-bold mb-3">추가된 함수 ({functions.length})</h3>
         {functions.length === 0 ? (
-          <p className="text-sm text-gray-500">추가된 함수가 없습니다</p>
+          <p className="text-sm text-gray-700">추가된 함수가 없습니다</p>
         ) : (
           <div className="space-y-2">
             {functions.map((func) => (
@@ -144,7 +144,7 @@ export default function FunctionPanel({
                     삭제
                   </button>
                 </div>
-                <div className="text-xs text-gray-600">
+                <div className="text-xs text-gray-800">
                   계수: [{func.coefficients.join(', ')}]
                 </div>
               </div>
@@ -156,7 +156,7 @@ export default function FunctionPanel({
       {/* 함수 설명 */}
       <div className="border-t pt-4 mt-6">
         <h3 className="font-bold mb-2 text-sm">함수 예제</h3>
-        <div className="text-xs text-gray-600 space-y-2">
+        <div className="text-xs text-gray-800 space-y-2">
           <div>
             <strong>1차 함수:</strong> y = 2x + 1 → 계수: 2,1
           </div>

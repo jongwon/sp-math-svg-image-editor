@@ -50,6 +50,8 @@ export default function MathSVGEditor() {
   const MIN_HEIGHT = 300;
   const MAX_WIDTH = 2400;
   const MAX_HEIGHT = 1600;
+  const MIN_ZOOM = 0.1;
+  const MAX_ZOOM = 5;
 
   // SVG 좌표 변환
   const getSVGPoint = useCallback((e: React.MouseEvent): Point => {
@@ -395,6 +397,14 @@ export default function MathSVGEditor() {
     });
   }, [state]);
 
+  // 좌표축 토글
+  const handleToggleAxes = useCallback(() => {
+    setState({
+      ...state,
+      showAxes: !state.showAxes,
+    });
+  }, [state]);
+
   // 텍스트 입력 완료
   const handleTextInputComplete = useCallback(() => {
     if (textInput.trim()) {
@@ -421,6 +431,46 @@ export default function MathSVGEditor() {
     setIsEditingText(false);
     setTextInput('');
   }, []);
+
+  // 마우스 휠로 줌
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, state.zoom + delta));
+      setState({
+        ...state,
+        zoom: newZoom,
+      });
+    },
+    [state, MIN_ZOOM, MAX_ZOOM]
+  );
+
+  // 줌 인
+  const handleZoomIn = useCallback(() => {
+    const newZoom = Math.min(MAX_ZOOM, state.zoom + 0.2);
+    setState({
+      ...state,
+      zoom: newZoom,
+    });
+  }, [state, MAX_ZOOM]);
+
+  // 줌 아웃
+  const handleZoomOut = useCallback(() => {
+    const newZoom = Math.max(MIN_ZOOM, state.zoom - 0.2);
+    setState({
+      ...state,
+      zoom: newZoom,
+    });
+  }, [state, MIN_ZOOM]);
+
+  // 줌 리셋
+  const handleZoomReset = useCallback(() => {
+    setState({
+      ...state,
+      zoom: 1,
+    });
+  }, [state]);
 
   // 캔버스 리사이즈 시작
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -478,6 +528,8 @@ export default function MathSVGEditor() {
         onRemoveBackgroundImage={handleRemoveBackgroundImage}
         hasBackgroundImage={state.backgroundImage !== null}
         showBackgroundImage={state.showBackgroundImage}
+        showAxes={state.showAxes}
+        onToggleAxes={handleToggleAxes}
       />
 
       {/* 메인 캔버스 */}
@@ -496,6 +548,7 @@ export default function MathSVGEditor() {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onDoubleClick={handleDoubleClick}
+            onWheel={handleWheel}
             style={{ cursor: state.selectedTool === 'pan' ? 'grab' : 'crosshair' }}
           >
             {/* 배경 이미지 */}
@@ -605,6 +658,34 @@ export default function MathSVGEditor() {
             </div>
           )}
 
+          {/* 줌 컨트롤 */}
+          <div className="absolute bottom-2 left-2 flex flex-col gap-1 bg-white rounded-lg shadow-lg p-2">
+            <button
+              onClick={handleZoomIn}
+              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center font-bold text-gray-700 transition-colors"
+              title="줌 인 (마우스 휠 위로)"
+            >
+              +
+            </button>
+            <div className="w-8 h-8 flex items-center justify-center text-xs font-medium text-gray-800">
+              {Math.round(state.zoom * 100)}%
+            </div>
+            <button
+              onClick={handleZoomOut}
+              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center font-bold text-gray-700 transition-colors"
+              title="줌 아웃 (마우스 휠 아래로)"
+            >
+              −
+            </button>
+            <button
+              onClick={handleZoomReset}
+              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-xs font-medium text-gray-700 transition-colors"
+              title="줌 리셋 (100%)"
+            >
+              1:1
+            </button>
+          </div>
+
           {/* 리사이즈 핸들 */}
           <div
             className="absolute bottom-0 right-0 w-6 h-6 bg-blue-500 cursor-nwse-resize hover:bg-blue-600 transition-colors"
@@ -619,8 +700,8 @@ export default function MathSVGEditor() {
         </div>
 
         {/* 상태 정보 */}
-        <div className="mt-4 text-sm text-gray-600">
-          도구: {state.selectedTool} | 도형: {state.shapes.length} | 함수: {state.functions.length} | 캔버스: {canvasWidth}x{canvasHeight}px
+        <div className="mt-4 text-sm text-gray-800">
+          도구: {state.selectedTool} | 도형: {state.shapes.length} | 함수: {state.functions.length} | 캔버스: {canvasWidth}x{canvasHeight}px | 줌: {Math.round(state.zoom * 100)}%
         </div>
       </div>
 

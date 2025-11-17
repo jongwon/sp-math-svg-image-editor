@@ -9,6 +9,8 @@ interface ToolbarProps {
   onRemoveBackgroundImage: () => void;
   hasBackgroundImage: boolean;
   showBackgroundImage: boolean;
+  showAxes: boolean;
+  onToggleAxes: () => void;
 }
 
 export default function Toolbar({
@@ -19,6 +21,8 @@ export default function Toolbar({
   onRemoveBackgroundImage,
   hasBackgroundImage,
   showBackgroundImage,
+  showAxes,
+  onToggleAxes,
 }: ToolbarProps) {
   const tools: { id: ToolType; label: string; icon: string }[] = [
     { id: 'select', label: '선택', icon: '↖' },
@@ -98,10 +102,25 @@ export default function Toolbar({
         </div>
       </div>
 
+      {/* 표시 설정 */}
+      <div className="border-t pt-4 mt-4">
+        <h3 className="font-bold mb-3">표시 설정</h3>
+        <button
+          onClick={onToggleAxes}
+          className={`w-full px-4 py-2 rounded-lg ${
+            showAxes
+              ? 'bg-blue-500 text-white hover:bg-blue-600'
+              : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+          }`}
+        >
+          {showAxes ? '좌표축 숨기기' : '좌표축 보기'}
+        </button>
+      </div>
+
       {/* 도구 설명 */}
       <div className="border-t pt-4 mt-4">
         <h3 className="font-bold mb-2">사용 방법</h3>
-        <div className="text-sm text-gray-600 space-y-1">
+        <div className="text-sm text-gray-800 space-y-1">
           {selectedTool === 'select' && <p>도형을 클릭하여 선택하고 점을 드래그하여 편집</p>}
           {selectedTool === 'pan' && <p>캔버스를 드래그하여 이동</p>}
           {selectedTool === 'line' && <p>시작점과 끝점을 클릭하여 선 그리기</p>}
