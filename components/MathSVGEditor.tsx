@@ -75,9 +75,10 @@ export default function MathSVGEditor() {
           draggedPointIndex: null,
         });
       } else if (state.selectedTool === 'line' || state.selectedTool === 'circle' ||
-                 state.selectedTool === 'rectangle' || state.selectedTool === 'ellipse') {
+                 state.selectedTool === 'rectangle' || state.selectedTool === 'ellipse' ||
+                 state.selectedTool === 'dimension') {
         setTempPoints([point]);
-      } else if (state.selectedTool === 'polygon') {
+      } else if (state.selectedTool === 'polygon' || state.selectedTool === 'angle') {
         setTempPoints([...tempPoints, point]);
       } else if (state.selectedTool === 'text') {
         // 텍스트 입력 모드 시작
@@ -206,6 +207,39 @@ export default function MathSVGEditor() {
           shapes: [...state.shapes, newShape],
         });
         setTempPoints([]);
+      } else if (state.selectedTool === 'dimension' && tempPoints.length === 1) {
+        // 치수선 생성
+        const newShape: Shape = {
+          id: `dimension-${Date.now()}`,
+          type: 'dimension',
+          points: [tempPoints[0], point],
+          color: '#666666',
+          strokeWidth: 1.5,
+          showDistance: true,
+          distanceOffset: 30,
+        };
+        setState({
+          ...state,
+          shapes: [...state.shapes, newShape],
+        });
+        setTempPoints([]);
+      } else if (state.selectedTool === 'angle' && tempPoints.length === 2) {
+        // 각도 표시 생성 (3점째 클릭)
+        const newShape: Shape = {
+          id: `angle-${Date.now()}`,
+          type: 'angle',
+          points: [tempPoints[0], tempPoints[1], point],
+          color: '#FF6B6B',
+          strokeWidth: 2,
+          angleType: 'general',
+          arcRadius: 40,
+          showAngleValue: true,
+        };
+        setState({
+          ...state,
+          shapes: [...state.shapes, newShape],
+        });
+        setTempPoints([]);
       }
 
       setDragState({
@@ -228,6 +262,23 @@ export default function MathSVGEditor() {
         points: tempPoints,
         color: '#000000',
         strokeWidth: 2,
+      };
+      setState({
+        ...state,
+        shapes: [...state.shapes, newShape],
+      });
+      setTempPoints([]);
+    } else if (state.selectedTool === 'angle' && tempPoints.length === 3) {
+      // 각도 표시 생성 (더블클릭으로도 완성 가능)
+      const newShape: Shape = {
+        id: `angle-${Date.now()}`,
+        type: 'angle',
+        points: tempPoints,
+        color: '#FF6B6B',
+        strokeWidth: 2,
+        angleType: 'general',
+        arcRadius: 40,
+        showAngleValue: true,
       };
       setState({
         ...state,

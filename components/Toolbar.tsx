@@ -29,6 +29,8 @@ export default function Toolbar({
     { id: 'ellipse', label: '타원', icon: '⬭' },
     { id: 'polygon', label: '다각형', icon: '⬡' },
     { id: 'text', label: '텍스트', icon: 'T' },
+    { id: 'dimension', label: '치수선', icon: '↔' },
+    { id: 'angle', label: '각도', icon: '∠' },
     { id: 'function', label: '함수', icon: 'ƒ' },
   ];
 
@@ -108,6 +110,8 @@ export default function Toolbar({
           {selectedTool === 'ellipse' && <p>중심점과 모서리를 클릭하여 타원 그리기</p>}
           {selectedTool === 'polygon' && <p>점들을 클릭하고 더블클릭으로 완성</p>}
           {selectedTool === 'text' && <p>텍스트를 배치할 위치 클릭</p>}
+          {selectedTool === 'dimension' && <p>두 점을 클릭하여 치수선 그리기 (점선 + 거리)</p>}
+          {selectedTool === 'angle' && <p>세 점을 클릭하여 각도 표시 (꼭지점 먼저)</p>}
           {selectedTool === 'function' && <p>오른쪽 패널에서 함수 추가</p>}
         </div>
       </div>

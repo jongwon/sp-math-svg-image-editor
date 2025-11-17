@@ -12,7 +12,9 @@ export type ShapeType =
   | 'ellipse'
   | 'polygon'
   | 'path'
-  | 'text';
+  | 'text'
+  | 'dimension'   // 치수선
+  | 'angle';      // 각도 표시
 
 // 함수 그래프 타입
 export type FunctionType =
@@ -39,6 +41,13 @@ export interface Shape {
   opacity?: number;
   text?: string;
   fontSize?: number;
+  // 치수선 속성
+  showDistance?: boolean;
+  distanceOffset?: number;  // 점선의 오프셋 (타원형 곡선)
+  // 각도 표시 속성
+  angleType?: 'right' | 'general';  // 직각 또는 일반각
+  arcRadius?: number;  // 각도 호의 반지름
+  showAngleValue?: boolean;  // 각도 값 표시 여부
 }
 
 // 함수 그래프 객체
@@ -78,7 +87,9 @@ export type ToolType =
   | 'polygon'
   | 'text'
   | 'function'
-  | 'background';
+  | 'background'
+  | 'dimension'   // 치수선
+  | 'angle';      // 각도 표시
 
 // 드래그 상태
 export interface DragState {
