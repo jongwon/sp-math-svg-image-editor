@@ -5,7 +5,8 @@ interface ShapeRendererProps {
   shapes: Shape[];
   selectedShapeId: string | null;
   onShapeClick: (id: string) => void;
-  onPointDragStart: (shapeId: string, pointIndex: number) => void;
+  onPointDragStart: (shapeId: string, pointIndex: number, e: React.MouseEvent) => void;
+  onShapeDragStart: (shapeId: string, e: React.MouseEvent) => void;
 }
 
 export default function ShapeRenderer({
@@ -13,6 +14,7 @@ export default function ShapeRenderer({
   selectedShapeId,
   onShapeClick,
   onPointDragStart,
+  onShapeDragStart,
 }: ShapeRendererProps) {
   return (
     <g>
@@ -33,7 +35,8 @@ export default function ShapeRenderer({
                   strokeWidth={shape.strokeWidth}
                   opacity={shape.opacity || 1}
                   onClick={() => onShapeClick(shape.id)}
-                  style={{ cursor: 'pointer' }}
+                  onMouseDown={(e) => onShapeDragStart(shape.id, e)}
+                  style={{ cursor: 'move' }}
                 />
                 {isSelected &&
                   shape.points.map((point, idx) => (
@@ -44,7 +47,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="blue"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, idx)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, idx, e);
+                      }}
                     />
                   ))}
               </g>
@@ -69,7 +75,8 @@ export default function ShapeRenderer({
                   fill={shape.fill || 'none'}
                   opacity={shape.opacity || 1}
                   onClick={() => onShapeClick(shape.id)}
-                  style={{ cursor: 'pointer' }}
+                  onMouseDown={(e) => onShapeDragStart(shape.id, e)}
+                  style={{ cursor: 'move' }}
                 />
                 {isSelected && (
                   <>
@@ -79,7 +86,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="blue"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, 0)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, 0, e);
+                      }}
                     />
                     <circle
                       cx={edge.x}
@@ -87,7 +97,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="blue"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, 1)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, 1, e);
+                      }}
                     />
                   </>
                 )}
@@ -113,7 +126,8 @@ export default function ShapeRenderer({
                   fill={shape.fill || 'none'}
                   opacity={shape.opacity || 1}
                   onClick={() => onShapeClick(shape.id)}
-                  style={{ cursor: 'pointer' }}
+                  onMouseDown={(e) => onShapeDragStart(shape.id, e)}
+                  style={{ cursor: 'move' }}
                 />
                 {isSelected &&
                   shape.points.map((point, idx) => (
@@ -124,7 +138,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="blue"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, idx)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, idx, e);
+                      }}
                     />
                   ))}
               </g>
@@ -149,7 +166,8 @@ export default function ShapeRenderer({
                   fill={shape.fill || 'none'}
                   opacity={shape.opacity || 1}
                   onClick={() => onShapeClick(shape.id)}
-                  style={{ cursor: 'pointer' }}
+                  onMouseDown={(e) => onShapeDragStart(shape.id, e)}
+                  style={{ cursor: 'move' }}
                 />
                 {isSelected && (
                   <>
@@ -159,7 +177,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="blue"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, 0)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, 0, e);
+                      }}
                     />
                     <circle
                       cx={edge.x}
@@ -167,7 +188,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="blue"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, 1)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, 1, e);
+                      }}
                     />
                   </>
                 )}
@@ -189,7 +213,8 @@ export default function ShapeRenderer({
                   fill={shape.fill || 'none'}
                   opacity={shape.opacity || 1}
                   onClick={() => onShapeClick(shape.id)}
-                  style={{ cursor: 'pointer' }}
+                  onMouseDown={(e) => onShapeDragStart(shape.id, e)}
+                  style={{ cursor: 'move' }}
                 />
                 {isSelected &&
                   shape.points.map((point, idx) => (
@@ -200,7 +225,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="blue"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, idx)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, idx, e);
+                      }}
                     />
                   ))}
               </g>
@@ -218,7 +246,8 @@ export default function ShapeRenderer({
                   fontSize={shape.fontSize || 16}
                   opacity={shape.opacity || 1}
                   onClick={() => onShapeClick(shape.id)}
-                  style={{ cursor: 'pointer', userSelect: 'none' }}
+                  onMouseDown={(e) => onShapeDragStart(shape.id, e)}
+                  style={{ cursor: 'move', userSelect: 'none' }}
                 >
                   {shape.text || 'Text'}
                 </text>
@@ -229,7 +258,10 @@ export default function ShapeRenderer({
                     r={5}
                     fill="blue"
                     style={{ cursor: 'move' }}
-                    onMouseDown={() => onPointDragStart(shape.id, 0)}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      onPointDragStart(shape.id, 0, e);
+                    }}
                   />
                 )}
               </g>
@@ -279,7 +311,8 @@ export default function ShapeRenderer({
                   fill="none"
                   opacity={shape.opacity || 1}
                   onClick={() => onShapeClick(shape.id)}
-                  style={{ cursor: 'pointer' }}
+                  onMouseDown={(e) => onShapeDragStart(shape.id, e)}
+                  style={{ cursor: 'move' }}
                 />
 
                 {/* 거리 텍스트 */}
@@ -290,7 +323,7 @@ export default function ShapeRenderer({
                     fill={shape.color}
                     fontSize={shape.fontSize || 14}
                     textAnchor="middle"
-                    style={{ userSelect: 'none' }}
+                    style={{ userSelect: 'none', pointerEvents: 'none' }}
                   >
                     {shape.text || distance.toFixed(1)}
                   </text>
@@ -305,7 +338,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="blue"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, 0)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, 0, e);
+                      }}
                     />
                     <circle
                       cx={p2.x}
@@ -313,7 +349,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="blue"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, 1)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, 1, e);
+                      }}
                     />
                   </>
                 )}
@@ -384,7 +423,8 @@ export default function ShapeRenderer({
                       strokeWidth={shape.strokeWidth}
                       fill="none"
                       onClick={() => onShapeClick(shape.id)}
-                      style={{ cursor: 'pointer' }}
+                      onMouseDown={(e) => onShapeDragStart(shape.id, e)}
+                      style={{ cursor: 'move' }}
                     />
                   </>
                 ) : (
@@ -396,7 +436,8 @@ export default function ShapeRenderer({
                       strokeWidth={shape.strokeWidth}
                       fill="none"
                       onClick={() => onShapeClick(shape.id)}
-                      style={{ cursor: 'pointer' }}
+                      onMouseDown={(e) => onShapeDragStart(shape.id, e)}
+                      style={{ cursor: 'move' }}
                     />
 
                     {/* 각도 값 표시 */}
@@ -407,7 +448,7 @@ export default function ShapeRenderer({
                         fill={shape.color}
                         fontSize={shape.fontSize || 14}
                         textAnchor="middle"
-                        style={{ userSelect: 'none' }}
+                        style={{ userSelect: 'none', pointerEvents: 'none' }}
                       >
                         {shape.text || `${angleDiff.toFixed(1)}°`}
                       </text>
@@ -424,7 +465,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="red"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, 0)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, 0, e);
+                      }}
                     />
                     <circle
                       cx={p1.x}
@@ -432,7 +476,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="blue"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, 1)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, 1, e);
+                      }}
                     />
                     <circle
                       cx={p2.x}
@@ -440,7 +487,10 @@ export default function ShapeRenderer({
                       r={5}
                       fill="blue"
                       style={{ cursor: 'move' }}
-                      onMouseDown={() => onPointDragStart(shape.id, 2)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        onPointDragStart(shape.id, 2, e);
+                      }}
                     />
                   </>
                 )}

@@ -108,7 +108,7 @@ export default function MathSVGEditor() {
             pan: { x: state.pan.x + dx, y: state.pan.y + dy },
           });
         } else if (dragState.draggedShapeId !== null && dragState.draggedPointIndex !== null) {
-          // 점 드래그
+          // 점 드래그 (개별 점 이동)
           setState({
             ...state,
             shapes: state.shapes.map((shape) => {
@@ -120,8 +120,8 @@ export default function MathSVGEditor() {
               return shape;
             }),
           });
-        } else if (state.selectedTool === 'select' && state.selectedShapeId) {
-          // 도형 전체 드래그
+        } else if (state.selectedShapeId && dragState.draggedShapeId === null) {
+          // 도형 전체 드래그 (모든 점 이동)
           const dx = point.x - dragState.currentPoint.x;
           const dy = point.y - dragState.currentPoint.y;
           setState({
@@ -298,15 +298,34 @@ export default function MathSVGEditor() {
 
   // 점 드래그 시작
   const handlePointDragStart = useCallback(
-    (shapeId: string, pointIndex: number) => {
+    (shapeId: string, pointIndex: number, e: React.MouseEvent) => {
+      const point = getSVGPoint(e);
+      setState({ ...state, selectedShapeId: shapeId });
       setDragState({
-        ...dragState,
         isDragging: true,
+        startPoint: point,
+        currentPoint: point,
         draggedShapeId: shapeId,
         draggedPointIndex: pointIndex,
       });
     },
-    [dragState]
+    [state, getSVGPoint]
+  );
+
+  // 도형 전체 드래그 시작
+  const handleShapeDragStart = useCallback(
+    (shapeId: string, e: React.MouseEvent) => {
+      const point = getSVGPoint(e);
+      setState({ ...state, selectedShapeId: shapeId });
+      setDragState({
+        isDragging: true,
+        startPoint: point,
+        currentPoint: point,
+        draggedShapeId: null,
+        draggedPointIndex: null,
+      });
+    },
+    [state, getSVGPoint]
   );
 
   // 도구 변경
@@ -520,6 +539,7 @@ export default function MathSVGEditor() {
               selectedShapeId={state.selectedShapeId}
               onShapeClick={handleShapeClick}
               onPointDragStart={handlePointDragStart}
+              onShapeDragStart={handleShapeDragStart}
             />
 
             {/* 임시 도형 (그리는 중) */}
