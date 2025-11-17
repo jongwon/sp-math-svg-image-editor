@@ -24,6 +24,8 @@ const INITIAL_STATE: EditorState = {
 
 export default function MathSVGEditor() {
   const [state, setState] = useState<EditorState>(INITIAL_STATE);
+  const [history, setHistory] = useState<EditorState[]>([INITIAL_STATE]);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     startPoint: { x: 0, y: 0 },
@@ -52,6 +54,58 @@ export default function MathSVGEditor() {
   const MAX_HEIGHT = 1600;
   const MIN_ZOOM = 0.1;
   const MAX_ZOOM = 5;
+
+  // History 관리 헬퍼 함수
+  const updateStateWithHistory = useCallback((newState: EditorState) => {
+    setState(newState);
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newState);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  }, [history, historyIndex]);
+
+  // Undo
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setState(history[newIndex]);
+    }
+  }, [history, historyIndex]);
+
+  // Redo
+  const handleRedo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setState(history[newIndex]);
+    }
+  }, [history, historyIndex]);
+
+  // 선택된 도형 삭제
+  const handleDeleteSelected = useCallback(() => {
+    if (state.selectedShapeId) {
+      const newState = {
+        ...state,
+        shapes: state.shapes.filter((shape) => shape.id !== state.selectedShapeId),
+        selectedShapeId: null,
+      };
+      updateStateWithHistory(newState);
+    }
+  }, [state, updateStateWithHistory]);
+
+  // 전체 클리어
+  const handleClearAll = useCallback(() => {
+    if (window.confirm('모든 도형과 함수를 삭제하시겠습니까?')) {
+      const newState = {
+        ...state,
+        shapes: [],
+        functions: [],
+        selectedShapeId: null,
+      };
+      updateStateWithHistory(newState);
+    }
+  }, [state, updateStateWithHistory]);
 
   // SVG 좌표 변환
   const getSVGPoint = useCallback((e: React.MouseEvent): Point => {
@@ -165,7 +219,7 @@ export default function MathSVGEditor() {
           color: '#000000',
           strokeWidth: 2,
         };
-        setState({
+        updateStateWithHistory({
           ...state,
           shapes: [...state.shapes, newShape],
         });
@@ -178,7 +232,7 @@ export default function MathSVGEditor() {
           color: '#000000',
           strokeWidth: 2,
         };
-        setState({
+        updateStateWithHistory({
           ...state,
           shapes: [...state.shapes, newShape],
         });
@@ -191,7 +245,7 @@ export default function MathSVGEditor() {
           color: '#000000',
           strokeWidth: 2,
         };
-        setState({
+        updateStateWithHistory({
           ...state,
           shapes: [...state.shapes, newShape],
         });
@@ -204,7 +258,7 @@ export default function MathSVGEditor() {
           color: '#000000',
           strokeWidth: 2,
         };
-        setState({
+        updateStateWithHistory({
           ...state,
           shapes: [...state.shapes, newShape],
         });
@@ -220,7 +274,7 @@ export default function MathSVGEditor() {
           showDistance: true,
           distanceOffset: 30,
         };
-        setState({
+        updateStateWithHistory({
           ...state,
           shapes: [...state.shapes, newShape],
         });
@@ -237,11 +291,14 @@ export default function MathSVGEditor() {
           arcRadius: 40,
           showAngleValue: true,
         };
-        setState({
+        updateStateWithHistory({
           ...state,
           shapes: [...state.shapes, newShape],
         });
         setTempPoints([]);
+      } else if (dragState.isDragging && (dragState.draggedShapeId !== null || state.selectedShapeId)) {
+        // 드래그가 끝났을 때 history에 추가
+        updateStateWithHistory(state);
       }
 
       setDragState({
@@ -252,7 +309,7 @@ export default function MathSVGEditor() {
         draggedPointIndex: null,
       });
     },
-    [state, tempPoints, getSVGPoint]
+    [state, tempPoints, getSVGPoint, updateStateWithHistory, dragState]
   );
 
   // 폴리곤 완성 (더블클릭)
@@ -265,7 +322,7 @@ export default function MathSVGEditor() {
         color: '#000000',
         strokeWidth: 2,
       };
-      setState({
+      updateStateWithHistory({
         ...state,
         shapes: [...state.shapes, newShape],
       });
@@ -282,13 +339,13 @@ export default function MathSVGEditor() {
         arcRadius: 40,
         showAngleValue: true,
       };
-      setState({
+      updateStateWithHistory({
         ...state,
         shapes: [...state.shapes, newShape],
       });
       setTempPoints([]);
     }
-  }, [state, tempPoints]);
+  }, [state, tempPoints, updateStateWithHistory]);
 
   // 도형 선택
   const handleShapeClick = useCallback(
@@ -342,23 +399,23 @@ export default function MathSVGEditor() {
   // 함수 추가
   const handleAddFunction = useCallback(
     (func: FunctionGraph) => {
-      setState({
+      updateStateWithHistory({
         ...state,
         functions: [...state.functions, func],
       });
     },
-    [state]
+    [state, updateStateWithHistory]
   );
 
   // 함수 삭제
   const handleRemoveFunction = useCallback(
     (id: string) => {
-      setState({
+      updateStateWithHistory({
         ...state,
         functions: state.functions.filter((f) => f.id !== id),
       });
     },
-    [state]
+    [state, updateStateWithHistory]
   );
 
   // 배경 이미지 업로드
@@ -417,14 +474,14 @@ export default function MathSVGEditor() {
         text: textInput,
         fontSize: textFontSize,
       };
-      setState({
+      updateStateWithHistory({
         ...state,
         shapes: [...state.shapes, newShape],
       });
     }
     setIsEditingText(false);
     setTextInput('');
-  }, [state, textInput, textPosition, textFontSize]);
+  }, [state, textInput, textPosition, textFontSize, updateStateWithHistory]);
 
   // 텍스트 입력 취소
   const handleTextInputCancel = useCallback(() => {
@@ -516,6 +573,38 @@ export default function MathSVGEditor() {
       };
     }
   }, [isResizing, handleResize, handleResizeEnd]);
+
+  // 키보드 이벤트 리스너 (Delete, Backspace, Undo, Redo)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 텍스트 입력 중이면 무시
+      if (isEditingText) return;
+
+      // Delete 또는 Backspace
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        handleDeleteSelected();
+      }
+      // Ctrl+Z (Undo)
+      else if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      // Ctrl+Shift+Z 또는 Ctrl+Y (Redo)
+      else if (
+        ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) ||
+        ((e.ctrlKey || e.metaKey) && e.key === 'y')
+      ) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditingText, handleDeleteSelected, handleUndo, handleRedo]);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -658,32 +747,61 @@ export default function MathSVGEditor() {
             </div>
           )}
 
-          {/* 줌 컨트롤 */}
-          <div className="absolute bottom-2 left-2 flex flex-col gap-1 bg-white rounded-lg shadow-lg p-2">
-            <button
-              onClick={handleZoomIn}
-              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center font-bold text-gray-700 transition-colors"
-              title="줌 인 (마우스 휠 위로)"
-            >
-              +
-            </button>
-            <div className="w-8 h-8 flex items-center justify-center text-xs font-medium text-gray-800">
-              {Math.round(state.zoom * 100)}%
+          {/* 편집 컨트롤 (Undo/Redo/Clear) */}
+          <div className="absolute bottom-2 left-2 flex gap-2">
+            <div className="flex flex-col gap-1 bg-white rounded-lg shadow-lg p-2">
+              <button
+                onClick={handleUndo}
+                disabled={historyIndex <= 0}
+                className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-sm text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                title="실행 취소 (Ctrl+Z)"
+              >
+                ↶
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={historyIndex >= history.length - 1}
+                className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-sm text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                title="다시 실행 (Ctrl+Y)"
+              >
+                ↷
+              </button>
+              <button
+                onClick={handleClearAll}
+                className="w-9 h-9 bg-red-100 hover:bg-red-200 rounded flex items-center justify-center text-xs font-medium text-red-700 transition-colors"
+                title="전체 삭제"
+              >
+                🗑
+              </button>
             </div>
-            <button
-              onClick={handleZoomOut}
-              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center font-bold text-gray-700 transition-colors"
-              title="줌 아웃 (마우스 휠 아래로)"
-            >
-              −
-            </button>
-            <button
-              onClick={handleZoomReset}
-              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-xs font-medium text-gray-700 transition-colors"
-              title="줌 리셋 (100%)"
-            >
-              1:1
-            </button>
+
+            {/* 줌 컨트롤 */}
+            <div className="flex flex-col gap-1 bg-white rounded-lg shadow-lg p-2">
+              <button
+                onClick={handleZoomIn}
+                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center font-bold text-gray-700 transition-colors"
+                title="줌 인 (마우스 휠 위로)"
+              >
+                +
+              </button>
+              <div className="w-8 h-8 flex items-center justify-center text-xs font-medium text-gray-800">
+                {Math.round(state.zoom * 100)}%
+              </div>
+              <button
+                onClick={handleZoomOut}
+                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center font-bold text-gray-700 transition-colors"
+                title="줌 아웃 (마우스 휠 아래로)"
+              >
+                −
+              </button>
+              <button
+                onClick={handleZoomReset}
+                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-xs font-medium text-gray-700 transition-colors"
+                title="줌 리셋 (100%)"
+              >
+                1:1
+              </button>
+            </div>
           </div>
 
           {/* 리사이즈 핸들 */}
