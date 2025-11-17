@@ -34,6 +34,7 @@ export default function MathSVGEditor() {
     draggedPointIndex: null,
   });
   const [tempPoints, setTempPoints] = useState<Point[]>([]);
+  const [currentMousePos, setCurrentMousePos] = useState<Point | null>(null);
   const [canvasWidth, setCanvasWidth] = useState(1200);
   const [canvasHeight, setCanvasHeight] = useState(800);
   const [isResizing, setIsResizing] = useState(false);
@@ -202,8 +203,13 @@ export default function MathSVGEditor() {
           currentPoint: point,
         });
       }
+
+      // 도형 그리기 중일 때 마우스 위치 추적 (미리보기용)
+      if (tempPoints.length > 0 && !dragState.isDragging) {
+        setCurrentMousePos(point);
+      }
     },
-    [dragState, state, getSVGPoint]
+    [dragState, state, getSVGPoint, tempPoints]
   );
 
   // 마우스 업 핸들러
@@ -224,6 +230,7 @@ export default function MathSVGEditor() {
           shapes: [...state.shapes, newShape],
         });
         setTempPoints([]);
+        setCurrentMousePos(null);
       } else if (state.selectedTool === 'circle' && tempPoints.length === 1) {
         const newShape: Shape = {
           id: `circle-${Date.now()}`,
@@ -237,6 +244,7 @@ export default function MathSVGEditor() {
           shapes: [...state.shapes, newShape],
         });
         setTempPoints([]);
+        setCurrentMousePos(null);
       } else if (state.selectedTool === 'rectangle' && tempPoints.length === 1) {
         const newShape: Shape = {
           id: `rectangle-${Date.now()}`,
@@ -250,6 +258,7 @@ export default function MathSVGEditor() {
           shapes: [...state.shapes, newShape],
         });
         setTempPoints([]);
+        setCurrentMousePos(null);
       } else if (state.selectedTool === 'ellipse' && tempPoints.length === 1) {
         const newShape: Shape = {
           id: `ellipse-${Date.now()}`,
@@ -263,6 +272,7 @@ export default function MathSVGEditor() {
           shapes: [...state.shapes, newShape],
         });
         setTempPoints([]);
+        setCurrentMousePos(null);
       } else if (state.selectedTool === 'dimension' && tempPoints.length === 1) {
         // 치수선 생성
         const newShape: Shape = {
@@ -279,6 +289,7 @@ export default function MathSVGEditor() {
           shapes: [...state.shapes, newShape],
         });
         setTempPoints([]);
+        setCurrentMousePos(null);
       } else if (state.selectedTool === 'angle' && tempPoints.length === 2) {
         // 각도 표시 생성 (3점째 클릭)
         const newShape: Shape = {
@@ -296,6 +307,7 @@ export default function MathSVGEditor() {
           shapes: [...state.shapes, newShape],
         });
         setTempPoints([]);
+        setCurrentMousePos(null);
       } else if (dragState.isDragging && (dragState.draggedShapeId !== null || state.selectedShapeId)) {
         // 드래그가 끝났을 때 history에 추가
         updateStateWithHistory(state);
@@ -327,6 +339,7 @@ export default function MathSVGEditor() {
         shapes: [...state.shapes, newShape],
       });
       setTempPoints([]);
+      setCurrentMousePos(null);
     } else if (state.selectedTool === 'angle' && tempPoints.length === 3) {
       // 각도 표시 생성 (더블클릭으로도 완성 가능)
       const newShape: Shape = {
@@ -344,6 +357,7 @@ export default function MathSVGEditor() {
         shapes: [...state.shapes, newShape],
       });
       setTempPoints([]);
+      setCurrentMousePos(null);
     }
   }, [state, tempPoints, updateStateWithHistory]);
 
@@ -687,9 +701,99 @@ export default function MathSVGEditor() {
             {/* 임시 도형 (그리는 중) */}
             {tempPoints.length > 0 && (
               <g>
+                {/* 임시 점들 표시 */}
                 {tempPoints.map((p, i) => (
                   <circle key={i} cx={p.x} cy={p.y} r={3} fill="red" />
                 ))}
+
+                {/* 가이드선 (미리보기) */}
+                {currentMousePos && tempPoints.length === 1 && (
+                  <>
+                    {/* 직선, 치수선: 점선 */}
+                    {(state.selectedTool === 'line' || state.selectedTool === 'dimension') && (
+                      <line
+                        x1={tempPoints[0].x}
+                        y1={tempPoints[0].y}
+                        x2={currentMousePos.x}
+                        y2={currentMousePos.y}
+                        stroke="#999"
+                        strokeWidth={1}
+                        strokeDasharray="5,5"
+                        opacity={0.7}
+                      />
+                    )}
+
+                    {/* 원: 반지름 점선 원 */}
+                    {state.selectedTool === 'circle' && (() => {
+                      const dx = currentMousePos.x - tempPoints[0].x;
+                      const dy = currentMousePos.y - tempPoints[0].y;
+                      const radius = Math.sqrt(dx * dx + dy * dy);
+                      return (
+                        <circle
+                          cx={tempPoints[0].x}
+                          cy={tempPoints[0].y}
+                          r={radius}
+                          stroke="#999"
+                          strokeWidth={1}
+                          strokeDasharray="5,5"
+                          fill="none"
+                          opacity={0.7}
+                        />
+                      );
+                    })()}
+
+                    {/* 사각형: 점선 사각형 */}
+                    {state.selectedTool === 'rectangle' && (
+                      <rect
+                        x={Math.min(tempPoints[0].x, currentMousePos.x)}
+                        y={Math.min(tempPoints[0].y, currentMousePos.y)}
+                        width={Math.abs(currentMousePos.x - tempPoints[0].x)}
+                        height={Math.abs(currentMousePos.y - tempPoints[0].y)}
+                        stroke="#999"
+                        strokeWidth={1}
+                        strokeDasharray="5,5"
+                        fill="none"
+                        opacity={0.7}
+                      />
+                    )}
+
+                    {/* 타원: 점선 타원 */}
+                    {state.selectedTool === 'ellipse' && (() => {
+                      const cx = (tempPoints[0].x + currentMousePos.x) / 2;
+                      const cy = (tempPoints[0].y + currentMousePos.y) / 2;
+                      const rx = Math.abs(currentMousePos.x - tempPoints[0].x) / 2;
+                      const ry = Math.abs(currentMousePos.y - tempPoints[0].y) / 2;
+                      return (
+                        <ellipse
+                          cx={cx}
+                          cy={cy}
+                          rx={rx}
+                          ry={ry}
+                          stroke="#999"
+                          strokeWidth={1}
+                          strokeDasharray="5,5"
+                          fill="none"
+                          opacity={0.7}
+                        />
+                      );
+                    })()}
+                  </>
+                )}
+
+                {/* 폴리곤/각도: 마지막 점에서 마우스까지 점선 */}
+                {currentMousePos && tempPoints.length > 0 &&
+                 (state.selectedTool === 'polygon' || state.selectedTool === 'angle') && (
+                  <line
+                    x1={tempPoints[tempPoints.length - 1].x}
+                    y1={tempPoints[tempPoints.length - 1].y}
+                    x2={currentMousePos.x}
+                    y2={currentMousePos.y}
+                    stroke="#999"
+                    strokeWidth={1}
+                    strokeDasharray="5,5"
+                    opacity={0.7}
+                  />
+                )}
               </g>
             )}
           </svg>
