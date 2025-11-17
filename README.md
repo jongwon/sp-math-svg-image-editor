@@ -1,36 +1,126 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SVG 수학 이미지 에디터
 
-## Getting Started
+Next.js 16 기반의 강력한 SVG 수학 그래프 및 도형 에디터입니다. 수학 함수 그래프를 그리고, 다양한 도형을 생성하며, 배경 이미지 위에 그림을 그릴 수 있습니다.
 
-First, run the development server:
+## 주요 기능
+
+### 좌표 시스템
+- X, Y 좌표축 표시
+- 조절 가능한 그리드 시스템
+- 눈금 및 좌표 레이블
+
+### 함수 그래프
+- **1차 함수**: y = ax + b
+- **2차 함수**: y = ax² + bx + c
+- **고차 다항식**: 3차, 4차, 5차 이상의 다항식
+- **삼각함수**: sin, cos, tan
+- **지수/로그 함수**: e^x, ln(x)
+- **이차곡선**: 타원, 쌍곡선, 포물선
+
+### 도형 그리기
+- 선 (Line)
+- 원 (Circle)
+- 사각형 (Rectangle)
+- 타원 (Ellipse)
+- 다각형 (Polygon)
+- 텍스트 블록
+
+### 편집 기능
+- 드래그 앤 드롭으로 도형 이동
+- 각 점을 개별적으로 선택하여 드래그
+- 도형 크기 조절
+- 도형 선택 및 편집
+
+### 킬러 기능: 배경 이미지
+- 배경 이미지 업로드
+- 이미지 표시/숨기기 토글
+- 기존 도형 이미지를 따라 그리기 가능
+- 이미지를 참고하여 정확한 그래프 작성
+
+## 시작하기
+
+### 개발 서버 실행
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 에디터를 사용하세요.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 프로덕션 빌드
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## 사용 방법
 
-To learn more about Next.js, take a look at the following resources:
+### 1. 도형 그리기
+1. 왼쪽 툴바에서 원하는 도구 선택
+2. 캔버스에서 클릭하여 도형 생성
+3. 다각형의 경우 더블클릭으로 완성
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. 함수 그래프 추가
+1. 오른쪽 패널에서 함수 타입 선택
+2. 계수를 쉼표로 구분하여 입력 (예: 1,0,0)
+3. 색상 선택
+4. "함수 추가" 버튼 클릭
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. 도형 편집
+1. "선택" 도구 활성화
+2. 도형을 클릭하여 선택
+3. 파란색 점을 드래그하여 모양 변경
 
-## Deploy on Vercel
+### 4. 배경 이미지 사용
+1. "이미지 업로드" 버튼으로 배경 이미지 추가
+2. "이미지 보기/숨기기" 버튼으로 토글
+3. 배경 이미지를 참고하여 도형 그리기
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 함수 입력 예제
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| 함수 타입 | 수식 | 계수 입력 예 |
+|----------|------|------------|
+| 1차 함수 | y = 2x + 1 | 2,1 |
+| 2차 함수 | y = x² - 2x + 1 | 1,-2,1 |
+| 3차 함수 | y = x³ + 2x² - x + 1 | 1,2,-1,1 |
+| 사인 | y = sin(x) | 1,1,0,0 |
+| 코사인 | y = 2cos(x) | 2,1,0,0 |
+| 지수 | y = e^x | 1,1,0 |
+| 타원 | 중심(0,0), a=3, b=2 | 0,0,3,2 |
+
+## 기술 스택
+
+- **Next.js 16** - React 프레임워크
+- **TypeScript** - 타입 안정성
+- **Tailwind CSS** - 스타일링
+- **SVG** - 벡터 그래픽
+
+## 프로젝트 구조
+
+```
+sp-math-svg-image-editor/
+├── app/
+│   ├── page.tsx           # 메인 페이지
+│   └── layout.tsx         # 레이아웃
+├── components/
+│   ├── MathSVGEditor.tsx  # 메인 에디터 컴포넌트
+│   ├── Grid.tsx           # 좌표축 및 그리드
+│   ├── FunctionRenderer.tsx # 함수 렌더링
+│   ├── ShapeRenderer.tsx  # 도형 렌더링
+│   ├── Toolbar.tsx        # 도구 모음
+│   └── FunctionPanel.tsx  # 함수 패널
+├── lib/
+│   └── mathUtils.ts       # 수학 계산 유틸리티
+└── types/
+    └── index.ts           # TypeScript 타입 정의
+```
+
+## 라이센스
+
+MIT
+
+## 기여
+
+이슈와 PR은 언제나 환영합니다!
