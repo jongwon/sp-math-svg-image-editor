@@ -74,6 +74,8 @@ export interface EditorState {
   gridSize: number;
   showGrid: boolean;
   showAxes: boolean;
+  strokeColor: string;
+  fillColor: string;
 }
 
 // 도구 타입

@@ -20,6 +20,8 @@ const INITIAL_STATE: EditorState = {
   gridSize: 40,
   showGrid: true,
   showAxes: true,
+  strokeColor: '#000000',
+  fillColor: 'none',
 };
 
 export default function MathSVGEditor() {
@@ -35,6 +37,7 @@ export default function MathSVGEditor() {
   });
   const [tempPoints, setTempPoints] = useState<Point[]>([]);
   const [currentMousePos, setCurrentMousePos] = useState<Point | null>(null);
+  const [clipboard, setClipboard] = useState<Shape | null>(null);
   const [canvasWidth, setCanvasWidth] = useState(1200);
   const [canvasHeight, setCanvasHeight] = useState(800);
   const [isResizing, setIsResizing] = useState(false);
@@ -106,6 +109,216 @@ export default function MathSVGEditor() {
       };
       updateStateWithHistory(newState);
     }
+  }, [state, updateStateWithHistory]);
+
+  // 복사 (Ctrl+C)
+  const handleCopy = useCallback(() => {
+    if (state.selectedShapeId) {
+      const selectedShape = state.shapes.find((s) => s.id === state.selectedShapeId);
+      if (selectedShape) {
+        setClipboard(selectedShape);
+      }
+    }
+  }, [state.selectedShapeId, state.shapes]);
+
+  // 붙여넣기 (Ctrl+V)
+  const handlePaste = useCallback(() => {
+    if (clipboard) {
+      // 새로운 ID 생성 및 약간 이동 (우하단으로 20px씩 이동)
+      const newShape: Shape = {
+        ...clipboard,
+        id: `${clipboard.type}-${Date.now()}`,
+        points: clipboard.points.map((p) => ({ x: p.x + 20, y: p.y + 20 })),
+      };
+      const newState = {
+        ...state,
+        shapes: [...state.shapes, newShape],
+        selectedShapeId: newShape.id,
+      };
+      updateStateWithHistory(newState);
+    }
+  }, [clipboard, state, updateStateWithHistory]);
+
+  // 복제 (Ctrl+D) - 복사 + 붙여넣기를 한번에
+  const handleDuplicate = useCallback(() => {
+    if (state.selectedShapeId) {
+      const selectedShape = state.shapes.find((s) => s.id === state.selectedShapeId);
+      if (selectedShape) {
+        const newShape: Shape = {
+          ...selectedShape,
+          id: `${selectedShape.type}-${Date.now()}`,
+          points: selectedShape.points.map((p) => ({ x: p.x + 20, y: p.y + 20 })),
+        };
+        const newState = {
+          ...state,
+          shapes: [...state.shapes, newShape],
+          selectedShapeId: newShape.id,
+        };
+        updateStateWithHistory(newState);
+      }
+    }
+  }, [state, updateStateWithHistory]);
+
+  // 레이어 순서 - 맨 앞으로 (Bring to Front)
+  const handleBringToFront = useCallback(() => {
+    if (!state.selectedShapeId) return;
+    const index = state.shapes.findIndex((s) => s.id === state.selectedShapeId);
+    if (index === -1 || index === state.shapes.length - 1) return;
+
+    const newShapes = [...state.shapes];
+    const [shape] = newShapes.splice(index, 1);
+    newShapes.push(shape);
+
+    updateStateWithHistory({
+      ...state,
+      shapes: newShapes,
+    });
+  }, [state, updateStateWithHistory]);
+
+  // 레이어 순서 - 맨 뒤로 (Send to Back)
+  const handleSendToBack = useCallback(() => {
+    if (!state.selectedShapeId) return;
+    const index = state.shapes.findIndex((s) => s.id === state.selectedShapeId);
+    if (index === -1 || index === 0) return;
+
+    const newShapes = [...state.shapes];
+    const [shape] = newShapes.splice(index, 1);
+    newShapes.unshift(shape);
+
+    updateStateWithHistory({
+      ...state,
+      shapes: newShapes,
+    });
+  }, [state, updateStateWithHistory]);
+
+  // 레이어 순서 - 앞으로 (Bring Forward)
+  const handleBringForward = useCallback(() => {
+    if (!state.selectedShapeId) return;
+    const index = state.shapes.findIndex((s) => s.id === state.selectedShapeId);
+    if (index === -1 || index === state.shapes.length - 1) return;
+
+    const newShapes = [...state.shapes];
+    [newShapes[index], newShapes[index + 1]] = [newShapes[index + 1], newShapes[index]];
+
+    updateStateWithHistory({
+      ...state,
+      shapes: newShapes,
+    });
+  }, [state, updateStateWithHistory]);
+
+  // 레이어 순서 - 뒤로 (Send Backward)
+  const handleSendBackward = useCallback(() => {
+    if (!state.selectedShapeId) return;
+    const index = state.shapes.findIndex((s) => s.id === state.selectedShapeId);
+    if (index === -1 || index === 0) return;
+
+    const newShapes = [...state.shapes];
+    [newShapes[index], newShapes[index - 1]] = [newShapes[index - 1], newShapes[index]];
+
+    updateStateWithHistory({
+      ...state,
+      shapes: newShapes,
+    });
+  }, [state, updateStateWithHistory]);
+
+  // SVG로 저장
+  const handleSaveAsSVG = useCallback(() => {
+    if (!svgRef.current) return;
+
+    // SVG 복사본 생성
+    const svgClone = svgRef.current.cloneNode(true) as SVGSVGElement;
+
+    // SVG 문자열로 변환
+    const svgData = new XMLSerializer().serializeToString(svgClone);
+    const blob = new Blob([svgData], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+
+    // 다운로드
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `math-editor-${Date.now()}.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, []);
+
+  // 프로젝트 저장 (JSON)
+  const handleSaveProject = useCallback(() => {
+    const projectData = {
+      version: '1.0',
+      state: {
+        shapes: state.shapes,
+        functions: state.functions,
+        canvasWidth,
+        canvasHeight,
+        strokeColor: state.strokeColor,
+        fillColor: state.fillColor,
+        gridSize: state.gridSize,
+        showGrid: state.showGrid,
+        showAxes: state.showAxes,
+      },
+      savedAt: new Date().toISOString(),
+    };
+
+    const jsonData = JSON.stringify(projectData, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `math-project-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [state, canvasWidth, canvasHeight]);
+
+  // 프로젝트 불러오기 (JSON)
+  const handleLoadProject = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const projectData = JSON.parse(event.target?.result as string);
+
+        if (!projectData.version || !projectData.state) {
+          alert('잘못된 프로젝트 파일 형식입니다.');
+          return;
+        }
+
+        const loadedState = projectData.state;
+
+        // 상태 복원
+        const newState: EditorState = {
+          ...state,
+          shapes: loadedState.shapes || [],
+          functions: loadedState.functions || [],
+          strokeColor: loadedState.strokeColor || '#000000',
+          fillColor: loadedState.fillColor || 'none',
+          gridSize: loadedState.gridSize || 40,
+          showGrid: loadedState.showGrid !== undefined ? loadedState.showGrid : true,
+          showAxes: loadedState.showAxes !== undefined ? loadedState.showAxes : true,
+        };
+
+        updateStateWithHistory(newState);
+
+        // 캔버스 크기 복원
+        if (loadedState.canvasWidth) setCanvasWidth(loadedState.canvasWidth);
+        if (loadedState.canvasHeight) setCanvasHeight(loadedState.canvasHeight);
+
+        alert('프로젝트를 성공적으로 불러왔습니다.');
+      } catch (error) {
+        alert('프로젝트 파일을 읽는 중 오류가 발생했습니다.');
+        console.error(error);
+      }
+    };
+    reader.readAsText(file);
+
+    // 파일 input 초기화 (같은 파일 다시 선택 가능하도록)
+    e.target.value = '';
   }, [state, updateStateWithHistory]);
 
   // SVG 좌표 변환
@@ -222,8 +435,9 @@ export default function MathSVGEditor() {
           id: `line-${Date.now()}`,
           type: 'line',
           points: [tempPoints[0], point],
-          color: '#000000',
+          color: state.strokeColor,
           strokeWidth: 2,
+          fill: state.fillColor,
         };
         updateStateWithHistory({
           ...state,
@@ -236,8 +450,9 @@ export default function MathSVGEditor() {
           id: `circle-${Date.now()}`,
           type: 'circle',
           points: [tempPoints[0], point],
-          color: '#000000',
+          color: state.strokeColor,
           strokeWidth: 2,
+          fill: state.fillColor,
         };
         updateStateWithHistory({
           ...state,
@@ -250,8 +465,9 @@ export default function MathSVGEditor() {
           id: `rectangle-${Date.now()}`,
           type: 'rectangle',
           points: [tempPoints[0], point],
-          color: '#000000',
+          color: state.strokeColor,
           strokeWidth: 2,
+          fill: state.fillColor,
         };
         updateStateWithHistory({
           ...state,
@@ -264,8 +480,9 @@ export default function MathSVGEditor() {
           id: `ellipse-${Date.now()}`,
           type: 'ellipse',
           points: [tempPoints[0], point],
-          color: '#000000',
+          color: state.strokeColor,
           strokeWidth: 2,
+          fill: state.fillColor,
         };
         updateStateWithHistory({
           ...state,
@@ -331,8 +548,9 @@ export default function MathSVGEditor() {
         id: `polygon-${Date.now()}`,
         type: 'polygon',
         points: tempPoints,
-        color: '#000000',
+        color: state.strokeColor,
         strokeWidth: 2,
+        fill: state.fillColor,
       };
       updateStateWithHistory({
         ...state,
@@ -346,7 +564,7 @@ export default function MathSVGEditor() {
         id: `angle-${Date.now()}`,
         type: 'angle',
         points: tempPoints,
-        color: '#FF6B6B',
+        color: state.strokeColor,
         strokeWidth: 2,
         angleType: 'general',
         arcRadius: 40,
@@ -476,6 +694,22 @@ export default function MathSVGEditor() {
     });
   }, [state]);
 
+  // 테두리 색상 변경
+  const handleStrokeColorChange = useCallback((color: string) => {
+    setState({
+      ...state,
+      strokeColor: color,
+    });
+  }, [state]);
+
+  // 채우기 색상 변경
+  const handleFillColorChange = useCallback((color: string) => {
+    setState({
+      ...state,
+      fillColor: color,
+    });
+  }, [state]);
+
   // 텍스트 입력 완료
   const handleTextInputComplete = useCallback(() => {
     if (textInput.trim()) {
@@ -483,7 +717,7 @@ export default function MathSVGEditor() {
         id: `text-${Date.now()}`,
         type: 'text',
         points: [textPosition],
-        color: '#000000',
+        color: state.strokeColor,
         strokeWidth: 1,
         text: textInput,
         fontSize: textFontSize,
@@ -588,7 +822,7 @@ export default function MathSVGEditor() {
     }
   }, [isResizing, handleResize, handleResizeEnd]);
 
-  // 키보드 이벤트 리스너 (Delete, Backspace, Undo, Redo)
+  // 키보드 이벤트 리스너 (Delete, Backspace, Undo, Redo, Copy, Paste, Duplicate)
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // 텍스트 입력 중이면 무시
@@ -612,13 +846,28 @@ export default function MathSVGEditor() {
         e.preventDefault();
         handleRedo();
       }
+      // Ctrl+C (Copy)
+      else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        e.preventDefault();
+        handleCopy();
+      }
+      // Ctrl+V (Paste)
+      else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        e.preventDefault();
+        handlePaste();
+      }
+      // Ctrl+D (Duplicate)
+      else if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        handleDuplicate();
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isEditingText, handleDeleteSelected, handleUndo, handleRedo]);
+  }, [isEditingText, handleDeleteSelected, handleUndo, handleRedo, handleCopy, handlePaste, handleDuplicate]);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -633,6 +882,13 @@ export default function MathSVGEditor() {
         showBackgroundImage={state.showBackgroundImage}
         showAxes={state.showAxes}
         onToggleAxes={handleToggleAxes}
+        strokeColor={state.strokeColor}
+        fillColor={state.fillColor}
+        onStrokeColorChange={handleStrokeColorChange}
+        onFillColorChange={handleFillColorChange}
+        onSaveAsSVG={handleSaveAsSVG}
+        onSaveProject={handleSaveProject}
+        onLoadProject={handleLoadProject}
       />
 
       {/* 메인 캔버스 */}
@@ -878,6 +1134,42 @@ export default function MathSVGEditor() {
                 title="전체 삭제"
               >
                 🗑
+              </button>
+            </div>
+
+            {/* 레이어 순서 컨트롤 */}
+            <div className="flex flex-col gap-1 bg-white rounded-lg shadow-lg p-2">
+              <button
+                onClick={handleBringToFront}
+                disabled={!state.selectedShapeId}
+                className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-xs font-medium text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                title="맨 앞으로"
+              >
+                ⇈
+              </button>
+              <button
+                onClick={handleBringForward}
+                disabled={!state.selectedShapeId}
+                className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-xs font-medium text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                title="앞으로"
+              >
+                ↑
+              </button>
+              <button
+                onClick={handleSendBackward}
+                disabled={!state.selectedShapeId}
+                className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-xs font-medium text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                title="뒤로"
+              >
+                ↓
+              </button>
+              <button
+                onClick={handleSendToBack}
+                disabled={!state.selectedShapeId}
+                className="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-xs font-medium text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                title="맨 뒤로"
+              >
+                ⇊
               </button>
             </div>
 

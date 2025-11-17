@@ -11,6 +11,13 @@ interface ToolbarProps {
   showBackgroundImage: boolean;
   showAxes: boolean;
   onToggleAxes: () => void;
+  strokeColor: string;
+  fillColor: string;
+  onStrokeColorChange: (color: string) => void;
+  onFillColorChange: (color: string) => void;
+  onSaveAsSVG: () => void;
+  onSaveProject: () => void;
+  onLoadProject: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export default function Toolbar({
@@ -23,6 +30,13 @@ export default function Toolbar({
   showBackgroundImage,
   showAxes,
   onToggleAxes,
+  strokeColor,
+  fillColor,
+  onStrokeColorChange,
+  onFillColorChange,
+  onSaveAsSVG,
+  onSaveProject,
+  onLoadProject,
 }: ToolbarProps) {
   const tools: { id: ToolType; label: string; icon: string }[] = [
     { id: 'select', label: '선택', icon: '↖' },
@@ -102,6 +116,60 @@ export default function Toolbar({
         </div>
       </div>
 
+      {/* 색상 설정 */}
+      <div className="border-t pt-4 mt-4">
+        <h3 className="font-bold mb-3">색상 설정</h3>
+
+        <div className="space-y-3">
+          {/* 테두리 색상 */}
+          <div>
+            <label className="block text-sm font-medium mb-2">테두리 색상</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="color"
+                value={strokeColor}
+                onChange={(e) => onStrokeColorChange(e.target.value)}
+                className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+              />
+              <input
+                type="text"
+                value={strokeColor}
+                onChange={(e) => onStrokeColorChange(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="#000000"
+              />
+            </div>
+          </div>
+
+          {/* 채우기 색상 */}
+          <div>
+            <label className="block text-sm font-medium mb-2">채우기 색상</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="color"
+                value={fillColor === 'none' ? '#ffffff' : fillColor}
+                onChange={(e) => onFillColorChange(e.target.value)}
+                className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                disabled={fillColor === 'none'}
+              />
+              <input
+                type="text"
+                value={fillColor}
+                onChange={(e) => onFillColorChange(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="none 또는 #ffffff"
+              />
+            </div>
+            <button
+              onClick={() => onFillColorChange(fillColor === 'none' ? '#ffffff' : 'none')}
+              className="w-full mt-2 px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm text-gray-700"
+            >
+              {fillColor === 'none' ? '채우기 활성화' : '채우기 없음'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* 표시 설정 */}
       <div className="border-t pt-4 mt-4">
         <h3 className="font-bold mb-3">표시 설정</h3>
@@ -115,6 +183,43 @@ export default function Toolbar({
         >
           {showAxes ? '좌표축 숨기기' : '좌표축 보기'}
         </button>
+      </div>
+
+      {/* 파일 관리 */}
+      <div className="border-t pt-4 mt-4">
+        <h3 className="font-bold mb-3">파일 관리</h3>
+
+        <div className="space-y-2">
+          {/* SVG로 저장 */}
+          <button
+            onClick={onSaveAsSVG}
+            className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+          >
+            SVG로 저장
+          </button>
+
+          {/* 프로젝트 저장 */}
+          <button
+            onClick={onSaveProject}
+            className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            프로젝트 저장
+          </button>
+
+          {/* 프로젝트 불러오기 */}
+          <label className="block">
+            <input
+              type="file"
+              accept=".json"
+              onChange={onLoadProject}
+              className="hidden"
+              id="project-load"
+            />
+            <div className="w-full px-4 py-2 bg-green-500 text-white rounded-lg cursor-pointer hover:bg-green-600 text-center">
+              프로젝트 불러오기
+            </div>
+          </label>
+        </div>
       </div>
 
       {/* 도구 설명 */}
